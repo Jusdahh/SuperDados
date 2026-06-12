@@ -1,0 +1,27 @@
+databases:
+  - name: superdados-db
+    databaseName: superdados
+    user: superdados
+
+services:
+  - type: web
+    name: superdados-api
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: superdados-db
+          property: connectionString
+      - key: APP_ENV
+        value: production
+      - key: LIMESURVEY_BASE_URL
+        value: https://ueldjudah.limesurvey.net
+      - key: PUBLIC_INVITE_EXPIRES_HOURS
+        value: "168"
+      - key: PUBLIC_COOKIE_SECURE
+        value: "true"
+      - key: HASH_SALT
+        generateValue: true

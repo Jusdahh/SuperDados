@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from app.db.base import Base
 from app import models  # noqa: F401
+from app.core.config import normalize_database_url
 
 load_dotenv()
 
@@ -19,7 +20,7 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    return os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    return normalize_database_url(os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url"))
 
 
 def run_migrations_offline() -> None:

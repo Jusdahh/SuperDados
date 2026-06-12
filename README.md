@@ -79,6 +79,77 @@ docker compose up --build
 
 O servico `app` espera o PostgreSQL ficar saudavel, roda `alembic upgrade head` e inicia o Uvicorn.
 
+## Hospedar em producao
+
+Para o MVP, o caminho mais simples e publicar a API em um provedor com HTTPS e Postgres gerenciado. O Render funciona bem para este formato: ele conecta com GitHub, cria Web Service Python e tambem oferece Postgres gerenciado.
+
+### Opcao recomendada: Render
+
+1. Entre em https://dashboard.render.com.
+2. Crie um novo Postgres:
+   - `New` -> `Postgres`
+   - nome sugerido: `superdados-db`
+   - regiao: escolha a mesma que usara no Web Service.
+3. Crie um novo Web Service:
+   - `New` -> `Web Service`
+   - conecte o repositorio `Jusdahh/SuperDados`
+   - runtime: `Python`
+   - build command:
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Configure o start command:
+
+```bash
+alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+5. Configure as variaveis de ambiente:
+
+```env
+DATABASE_URL=<Internal Database URL do Postgres do Render>
+APP_ENV=production
+HASH_SALT=<um texto secreto longo>
+LIMESURVEY_BASE_URL=https://ueldjudah.limesurvey.net
+PUBLIC_INVITE_EXPIRES_HOURS=168
+PUBLIC_COOKIE_SECURE=true
+```
+
+O app tambem inclui `render.yaml`, entao voce pode usar a opcao de Blueprint do Render para criar Web Service e banco a partir desse arquivo. Mesmo assim, revise as variaveis antes de usar em producao.
+
+Depois do deploy, o Render vai gerar uma URL HTTPS parecida com:
+
+```text
+https://superdados-api.onrender.com
+```
+
+O link unico para anuncio da Meta ficaria:
+
+```text
+https://superdados-api.onrender.com/entry/1?utm_source=meta&utm_campaign=rodada_1
+```
+
+Antes de anunciar, gere um estoque de tokens no ambiente de producao e importe no LimeSurvey:
+
+```bash
+python -m scripts.limesurvey_export_invites \
+  --base-url https://superdados-api.onrender.com \
+  --survey-id 1 \
+  --quantity 5000 \
+  --source-channel meta_ads \
+  --expires-in-hours 168 \
+  --output participantes_meta.csv
+```
+
+Importante: se voce criou pesquisas e tokens localmente em `superdados.db`, eles nao vao automaticamente para o banco de producao. Em producao, crie a pesquisa novamente via `/docs`, ajuste `external_form_id` para `318945`, gere tokens e importe o CSV novo no LimeSurvey.
+
+### Referencias de deploy
+
+- Render FastAPI: https://render.com/docs/deploy-fastapi
+- Render Postgres: https://render.com/docs/postgresql-creating-connecting
+
 ## Testes
 
 ```bash
