@@ -21,6 +21,9 @@ services:
       DATABASE_URL: postgresql+psycopg://superdados:superdados@postgres:5432/superdados
       HASH_SALT: local-dev-salt
       APP_ENV: local
+      LIMESURVEY_BASE_URL: https://ueldjudah.limesurvey.net
+      PUBLIC_INVITE_EXPIRES_HOURS: "168"
+      PUBLIC_COOKIE_SECURE: "false"
     ports:
       - "8000:8000"
     depends_on:
