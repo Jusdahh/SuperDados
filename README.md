@@ -206,6 +206,50 @@ No painel administrativo do LimeSurvey:
 
 O `device_fingerprint` e o `user_agent` nao sao garantidos pelo CSV padrao do LimeSurvey. Para usa-los no MVP, crie perguntas ocultas ou campos equivalentes e preencha via template/script do LimeSurvey. Se esses campos nao existirem, o script de importacao usa valores fallback.
 
+### 2.1. Nova pesquisa de teste com rastreabilidade
+
+Para testar rastreabilidade, crie uma pesquisa nova no LimeSurvey com estes campos:
+
+Perguntas visiveis:
+
+- `municipio_votacao`: "Em qual municipio voce vota?"
+- `attention_check`: "Para controle de qualidade, digite: CORRECT"
+- `candidato`: pergunta de voto/teste
+
+Campos tecnicos ocultos ou administrativos:
+
+- `user_agent`: navegador/dispositivo informado pelo browser
+- `device_fingerprint`: identificador tecnico do navegador, quando disponivel
+- `browser_language`: idioma do navegador
+- `timezone`: fuso horario do navegador
+- `screen_resolution`: resolucao de tela
+- `referrer`: URL anterior/origem, quando disponivel
+
+Mesmo sem esses campos ocultos, o SuperDados ja registra sinais tecnicos no momento em que a pessoa entra pelo link `/entry/{survey_id}`:
+
+- hash do IP de primeira abertura;
+- hash do user agent de primeira abertura;
+- hash do cookie tecnico do navegador;
+- origem/campanha via `utm_source`, `utm_campaign` e `utm_content`;
+- token reservado para aquele navegador.
+
+Quando a resposta e importada do LimeSurvey, ela e ligada ao convite pelo `Codigo de acesso`/`token`. Assim a auditoria consegue cruzar:
+
+```text
+resposta -> token -> convite -> origem/campanha -> hashes tecnicos da entrada
+```
+
+Para o CSV do LimeSurvey funcionar com o SuperDados, configure:
+
+- `Anonymized responses`: `Off` durante os testes, para exportar o codigo de acesso;
+- `Allow multiple responses with the same access code`: `Off`;
+- `Allow public registration`: `Off`;
+- `Link survey on public index page`: `Off`.
+
+Sobre localizacao: o MVP nao guarda IP bruto e nao faz geolocalizacao automatica. A forma mais segura para validar aderencia territorial agora e combinar a pergunta `municipio_votacao` com sinais de risco. Geolocalizacao por IP pode ser adicionada depois, de forma aproximada e preferencialmente armazenando apenas cidade/UF inferida, nao o IP bruto. GPS do navegador exige permissao explicita do usuario e tende a aumentar atrito e sensibilidade de privacidade.
+
+Privacidade: use esses sinais para controle de qualidade e prevencao de fraude, nao para expor identidade individual. Em producao, revise aviso de privacidade, base legal, tempo de retencao e acesso aos dados conforme LGPD.
+
 ### 3. Ativar modo fechado por tokens
 
 No LimeSurvey, use a area de participantes da pesquisa:

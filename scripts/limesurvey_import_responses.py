@@ -17,6 +17,17 @@ ATTENTION_COLUMN_ALIASES = (
     "Para controle de qualidade, digite: CORRECT",
     "Para controle de qualidade, digite correct.",
 )
+IP_COLUMN_ALIASES = ("ipaddr", "IP address", "Endereço IP", "Endereco IP")
+USER_AGENT_COLUMN_ALIASES = ("user_agent", "User agent", "Navegador / dispositivo", "Agente de usuario")
+DEVICE_FINGERPRINT_COLUMN_ALIASES = ("device_fingerprint", "Device fingerprint", "Fingerprint do dispositivo")
+TRACE_FIELD_ALIASES = {
+    "user_agent": USER_AGENT_COLUMN_ALIASES,
+    "device_fingerprint": DEVICE_FINGERPRINT_COLUMN_ALIASES,
+    "browser_language": ("browser_language", "Idioma do navegador"),
+    "timezone": ("timezone", "Fuso horario", "Fuso horário"),
+    "screen_resolution": ("screen_resolution", "Resolucao de tela", "Resolução de tela"),
+    "referrer": ("referrer", "URL de origem", "Origem do acesso"),
+}
 
 
 def post_json(base_url: str, path: str, payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
@@ -100,6 +111,10 @@ def normalized_raw_payload(row: dict[str, str]) -> dict[str, str]:
         raw_payload["municipio_votacao"] = city
     if attention_check and "attention_check" not in raw_payload:
         raw_payload["attention_check"] = attention_check
+    for normalized_name, aliases in TRACE_FIELD_ALIASES.items():
+        _, value = value_from(row, normalized_name, aliases)
+        if value and normalized_name not in raw_payload:
+            raw_payload[normalized_name] = value
     return raw_payload
 
 
@@ -126,9 +141,12 @@ def build_response_payload(row: dict[str, str], args: argparse.Namespace) -> dic
             started_at_column=args.started_at_column,
             submitted_at_column=submitted_at_column,
         ),
-        "ip": row.get(args.ip_column) or args.default_ip,
-        "user_agent": row.get(args.user_agent_column) or args.default_user_agent,
-        "device_fingerprint": row.get(args.device_fingerprint_column) or args.default_device_fingerprint,
+        "ip": value_from(row, args.ip_column, IP_COLUMN_ALIASES)[1] or args.default_ip,
+        "user_agent": value_from(row, args.user_agent_column, USER_AGENT_COLUMN_ALIASES)[1] or args.default_user_agent,
+        "device_fingerprint": (
+            value_from(row, args.device_fingerprint_column, DEVICE_FINGERPRINT_COLUMN_ALIASES)[1]
+            or args.default_device_fingerprint
+        ),
         "raw_payload": normalized_raw_payload(row),
     }
 

@@ -135,8 +135,10 @@ def test_import_responses_understands_portuguese_limesurvey_columns(tmp_path, mo
     input_path = tmp_path / "responses.csv"
     input_path.write_text(
         '"ID da resposta","Data de submissão","Código de acesso","Data de início",'
-        '"Em qual município você vota?","Para controle de qualidade, digite: CORRECT"\n'
-        '"5","2026-06-12 14:19:35","token_a","2026-06-12 14:19:27","Itabira","CORRECT"\n',
+        '"Em qual município você vota?","Para controle de qualidade, digite: CORRECT",'
+        '"Navegador / dispositivo","Fingerprint do dispositivo","Fuso horário","Resolução de tela"\n'
+        '"5","2026-06-12 14:19:35","token_a","2026-06-12 14:19:27","Itabira","CORRECT",'
+        '"Mozilla/5.0","device-123","America/Sao_Paulo","1920x1080"\n',
         encoding="utf-8",
     )
     posted_payloads = []
@@ -154,8 +156,12 @@ def test_import_responses_understands_portuguese_limesurvey_columns(tmp_path, mo
     assert payload["token"] == "token_a"
     assert payload["external_response_id"] == "5"
     assert payload["duration_seconds"] == 8
+    assert payload["user_agent"] == "Mozilla/5.0"
+    assert payload["device_fingerprint"] == "device-123"
     assert payload["raw_payload"]["municipio_votacao"] == "Itabira"
     assert payload["raw_payload"]["attention_check"] == "CORRECT"
+    assert payload["raw_payload"]["timezone"] == "America/Sao_Paulo"
+    assert payload["raw_payload"]["screen_resolution"] == "1920x1080"
 
 
 def test_import_responses_reports_empty_portuguese_token_column():
